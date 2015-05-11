@@ -110,10 +110,6 @@ void delete_p(list_p* beg)
             beg = copy;
         }   
     }   
-    else
-    {   
-        //printf("in delete beg is NULL\n");
-    }
 } 
 void sig_winch(int signo)
 {
@@ -127,8 +123,6 @@ list_p* init_file(int fd, int** mfile)
     char stream;
     int er_read = read(fd, &stream, 1);
     int first_key = 1;
-    //char string[1024];
-    //int counter_string = 0;
     
     list_p* res = NULL;
     list_p* res_copy = NULL;
@@ -136,7 +130,6 @@ list_p* init_file(int fd, int** mfile)
     mfile[0][0] = 0;
     while (er_read != 0)
     {
-        //printw("catched %c\n", stream);
         if ((stream == '\n') || (first_key == 1))
         {
             if (first_key == 1)
@@ -149,9 +142,7 @@ list_p* init_file(int fd, int** mfile)
             {
                 res_copy = plus_next_p(res_copy, NULL);
             }
-            //printf("hello mfile\n");
             mfile[0][0] = mfile[0][0] + 1;
-            //printf("goodbye mfile\n");
         }
         if ((stream >= 32) && (stream <= 126))
         {
@@ -188,47 +179,6 @@ list_p* init_file(int fd, int** mfile)
     return res;
 }
 
-/*void print_file(int y_beg, int x_beg, list_p* list_file)
-{
-    struct winsize size;
-    ioctl(fileno(stdout), TIOCGWINSZ, (char*) &size);
-    clear();
-    move(0, 0);
-    //printw("in print\n");
-    int counter_file = 0;
-    int counter_string;
-    list_p* list_file_copy = list_file;
-    list* string_copy;
-    int win_y, win_x;
-    if (list_file_copy == NULL)
-    {
-        printw("NULL\n");
-    }
-    while (list_file_copy != NULL)
-    {
-        if ((counter_file >= y_beg) && (counter_file <= size.ws_row - 3))
-        {
-            //printw("in string process\n");
-            string_copy = list_file_copy->val;
-            counter_string = 0;
-            while (string_copy != NULL)
-            {
-                if ((counter_string >= x_beg) && (counter_string < size.ws_col))
-                {
-                    printw("%c", string_copy->val);
-                }
-                ++counter_string;
-                string_copy = string_copy->next;
-            }
-            getyx(stdscr, win_y, win_x);
-            move(win_y + 1, 0);
-            //printw("move done\n");
-        }
-        ++counter_file;
-        list_file_copy = list_file_copy->next;
-    }
-}*/
-
 void print_file(int str_beg, list_p* list_file, int* view)
 {
     list_p* list_file_copy = list_file;
@@ -240,13 +190,17 @@ void print_file(int str_beg, list_p* list_file, int* view)
     int counter_str_file = 0;
     struct winsize size;
     ioctl(fileno(stdout), TIOCGWINSZ, (char*) &size);
+    for (int i = 0; i < size.ws_row; i++)
+    {
+        view[i] = -1;
+    }
     int win_y, win_x;
     while ((list_file_copy != NULL) && (counter_y_win < size.ws_row - 1))
     {
-        string_copy = list_file_copy->val;
-        counter_x_win = 0;
         if (counter_str_file >= str_beg)
         {
+            string_copy = list_file_copy->val;
+            counter_x_win = 0;
             while (string_copy != NULL)
             {
                 if (counter_x_win + 1 == size.ws_col)
@@ -263,21 +217,21 @@ void print_file(int str_beg, list_p* list_file, int* view)
                 string_copy = string_copy->next;
             }
             view[counter_y_win] = counter_str_file;
+            ++counter_y_win;
+            getyx(stdscr, win_y, win_x);
+            if (win_y < counter_y_win)
+            {
+                printw("\n");
+            }
         }
         ++counter_str_file;
-        ++counter_y_win;
         list_file_copy = list_file_copy->next;
-        getyx(stdscr, win_y, win_x);
-        if ((win_y < counter_y_win) && (counter_str_file >= str_beg))
-        {
-            printw("\n");
-        }
     }
 }
 
 int main(int argc, char** argv)
 {
-    int er = open("/Users/evgeniatveritinova1/acos/my_vim/er", O_RDWR);
+    int er = open("/Users/evgeniatveritinova1/my_vim/er", O_RDWR);
     if (er == -1)
     {
         perror("open");
@@ -305,29 +259,12 @@ int main(int argc, char** argv)
     mfile[0] = (int*) malloc(sizeof(int));
     mfile[1] = NULL;
     list_file = init_file(fd, mfile);
-    int view[size.ws_row - 1];
-    for (int i = 0; i < size.ws_row - 1; i++)
-    {
-        view[i] = -1;
-    }
-    /*for (int i = 0; i < mfile[0][0]; i++)
-    {
-        view[i] = (int*) malloc(sizeof(int) * ((mfile[1][i] - 1) / size.ws_col + 1));
-    }*/
+    int view[size.ws_row];
     print_file(0, list_file, view);
     int win_beg_y = 0;
     char command[5];
-    //int counter_string = 0;
     mode = 0;
     move(0, 0);
-    
-    /*clear();
-    move(0, 0);
-    for (int i = 0; i < size.ws_row - 1; i++)
-    {
-        printw("%d   %d\n", i, view[i]);
-    }*/
-
 
     while (1)
     {
@@ -337,29 +274,103 @@ int main(int argc, char** argv)
             noecho();
         }
         key = getch();
-        if (key == KEY_DOWN)
+        if (key == KEY_DOWN) // переходит к следующей строчке в файле, а не а экране
         {
             getyx(stdscr, win_y, win_x);
-            if (view[win_y + 1] <= mfile[0][0] - 1)
+            if (view[win_y] + 1 < mfile[0][0]) // если мы не на последней строчке файла
             {
-                if (win_y + 1 == size.ws_row - 1)
+                if (win_y == size.ws_row - 2) // eсли текущая строчка в конце экрана
                 {
                     print_file(win_beg_y + 1, list_file, view);
                     ++win_beg_y;
                     move(win_y, win_x);
                 }
-                else
+                else // если текущая строчка не в конце экрана
                 {
-                    if (mfile[1][view[win_y]] != 0)
+                    // поиск номера первой строчки на экране, где записана следующая строчка файла
+                    int beg = view[win_y];
+                    int win_y_copy = win_y;
+                    while (beg == view[win_y_copy])
                     {
-                        if (win_x > mfile[1][view[win_y]] - 1)
+                        ++win_y_copy;
+                    }
+                    if(mfile[1][view[win_y_copy]] == 0) // если следующая строчка пустая 
+                    {
+                        move(win_y_copy, 0);
+                    }
+                    else
+                    {
+                        if (mfile[1][view[win_y_copy]] - 1 >= win_x) // если при перемещении курсора по вертикали, мы попадем на строчку
                         {
-                            move(win_y + 1, mfile[1][view[win_y]] - 1);
+                            move(win_y_copy, win_x);
                         }
                         else
                         {
-                            move(win_y + 1, win_x);
+                            move(win_y_copy, mfile[1][view[win_y_copy]] - 1);
                         }
+                    }
+                }
+            }
+        }
+        if (key == KEY_UP) // переходит к предыдущей строчке в файле, а не на экране6
+        {
+            getyx(stdscr, win_y, win_x);
+            if (view[win_y] - 1 >= 0) // если мы не на первой строчке фалйа
+            {
+                if (win_y == 0) // если текущая строчка в начале экрана
+                {
+                    print_file(win_beg_y - 1, list_file, view);
+                    --win_beg_y;
+                    move(0, win_x);
+                }
+                else
+                {
+                    int beg = view[win_y];
+                    int win_y_copy = win_y;
+                    while (beg == view[win_y_copy])
+                    {
+                        --win_y_copy;
+                    }
+                    if (mfile[1][view[win_y_copy]] == 0)
+                    {
+                        move(win_y_copy, 0);
+                    }
+                    else
+                    {
+                        if (mfile[1][view[win_y_copy]] - 1 >= win_x)
+                        {
+                            move(win_y_copy, win_x);
+                        }
+                        else
+                        {
+                            move(win_y_copy, mfile[1][view[win_y_copy]] - 1);
+                        }
+                    }
+                }
+            }
+        }
+        if (key == KEY_LEFT)
+        {
+            getyx(stdscr, win_y, win_x);
+            move(win_y, win_x - 1);
+        }
+        if (key == KEY_RIGHT)
+        {
+            getyx(stdscr, win_y, win_x);
+            if (view[win_y +1] != -1)
+            {
+                if (view[win_y + 1] > view[win_y]) // если следующая строчка на экране - следующая строчка в файле
+                {
+                    if (win_x < mfile[1][view[win_y]] - 1)
+                    {
+                        move(win_y, win_x + 1);
+                    }
+                }
+                if (view[win_y + 1] == view[win_y]) // если следующая строчка на экране - продолжение текущей строчки в файле
+                {
+                    if (win_x < size.ws_col - 1)
+                    {
+                        move(win_y, win_x + 1);
                     }
                     else
                     {
@@ -367,66 +378,14 @@ int main(int argc, char** argv)
                     }
                 }
             }
-        }
-        if (key == KEY_UP)
-        {
-            getyx(stdscr, win_y, win_x);
-            if (win_y == 0)
-            {
-                if (win_beg_y > 0)
-                {
-                    print_file(win_beg_y - 1, list_file, view);
-                    --win_beg_y;
-                    move(0, win_x);
-                }
-            }
             else
             {
-                move(win_y - 1, win_x);
-            }
-        }
-        /*
-        if (key == KEY_LEFT)
-        {
-            getyx(stdscr, win_y, win_x);
-            if(win_x == 0)
-            {
-                if (win_beg_x > 0)
-                {
-                    print_file(win_beg_y, win_beg_x - 1, list_file);
-                    --win_beg_x;
-                    move(win_y, 0);
-                }
-            }
-            else
-            {
-                move(win_y, win_x - 1);
-            }
-        }
-        if (key == KEY_RIGHT)
-        {
-            getyx(stdscr, win_y, win_x);
-            if (win_x + 1 != size.ws_col)
-            {
-                if (win_x < mfile[1][win_y] - 1)
+                if (win_x + 1 <= mfile[1][view[win_y]] - 1)
                 {
                     move(win_y, win_x + 1);
                 }
-                else
-                {
-                    if (win_y < mfile[0][0] - 1)
-                    {
-                        move(win_y + 1, 0);
-                    }
-                }
             }
-            else
-            {
-                print_file(win_beg_y, win_beg_x + 1, list_file);
-                ++win_beg_x;
-                move(win_y, win_x);
-            }
-        }*/
+        }
         if (key == 353)// shift + tab
         {
             echo();
