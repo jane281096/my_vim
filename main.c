@@ -7,6 +7,8 @@
 #include <string.h>
 #include <unistd.h>
 
+int mode;
+
 struct list
 {
     unsigned char val;
@@ -445,23 +447,68 @@ int main(int argc, char** argv)
                 }
             }
         }
+        if ((key >= 32) && (key <= 255) && (mode == 1))
+        {
+            getyx(stdscr, win_y, win_x);
+            int counter_file = 0;
+            int counter_string;
+            list_p* file_copy = list_file;
+            list* string_copy;
+            while(file_copy != NULL)
+            {
+                string_copy = file_copy->val;
+                if (counter_file == win_beg_y + win_y)
+                {
+                    counter_string = 0;
+                    int win_y_copy = win_y;
+                    while (view[win_y] == view[win_y_copy])
+                    {
+                        --win_y_copy;
+                    }
+                    ++win_y_copy;
+                    while (string_copy != NULL)
+                    { 
+                        if (counter_string == win_x - 1 + size.ws_col * (win_y - win_y_copy))
+                        {
+                            string_copy->next = plus_next(string_copy, key);
+                            print_file(win_beg_y, list_file, view);
+                            move(win_y, win_x + 1);
+                            break;
+                        }
+                        ++counter_string;
+                        string_copy = string_copy->next;
+                    }
+                    break;
+                }
+                file_copy = file_copy->next;
+                ++counter_file;
+            }
+        }
         if (key == 353)// shift + tab
         {
+            //printw("I AM HERE");
+            getyx(stdscr, win_y, win_x);
             echo();
             move(size.ws_row - 1, 0);
+            printw("enter command: ");
             key = getch();
             // q - quit
             // s - save
-            // e - start edit mode 
-            // r - start read mode 
+            // e - start edit mode = 1 
+            // r - start read mode = 0
             if (key == 'q')
             {
-                for (int i = 0; i < mfile[0][0] + 2; i++)
-                {
-                    free(mfile[i]);
-                }
+                free(mfile[0]);
+                free(mfile[1]);
                 free(mfile);
                 break;
+            }
+            if (key == 'e')
+            {
+                mode = 1;
+                //printw("%c", key);
+                move(win_y, win_x);
+                //printw("%c", key);
             }
         }
     }

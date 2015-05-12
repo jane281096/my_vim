@@ -1,3 +1,2 @@
-open: No such file or directory
- *** error for object 0x48006434325b1b: pointer being freed was not allocated
+rez(6203,0x7fff757a8300) malloc: *** error for object 0x48006436355b1b: pointer being freed was not allocated
 *** set a breakpoint in malloc_error_break to debug
