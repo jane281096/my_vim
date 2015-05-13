@@ -1,2 +1,2 @@
-rez(6203,0x7fff757a8300) malloc: *** error for object 0x48006436355b1b: pointer being freed was not allocated
+my_vim(7389,0x7fff757a8300) malloc: *** error for object 0x7ffdfb4086d8: incorrect checksum for freed object - object was probably modified after being freed.
 *** set a breakpoint in malloc_error_break to debug
