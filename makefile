@@ -1,4 +1,4 @@
-all: my_vim
-my_vim: main.c
-	gcc main.c -o my_vim -lpanel -lncurses
+all: cute_vim
+cute_vim: main.c
+	gcc main.c -o cute_vim -lpanel -lncurses
 main.c:

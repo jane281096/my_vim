@@ -9,7 +9,7 @@
 #include <unistd.h>
 
 int mode = 0;
-int numbers_key = 5;
+int numbers_key = 0;
 
 struct list
 {
@@ -259,6 +259,9 @@ void print_file(int str_beg, list_p* list_file, int* view)
         list_file_copy = list_file_copy->next;
     }
     move(size.ws_row - 1, 0);
+    start_color();
+    init_pair(1, COLOR_BLACK, COLOR_CYAN);
+    attron(COLOR_PAIR(1));
     if (mode == 1)
     {
         printw("***** edit mode *****");
@@ -267,6 +270,11 @@ void print_file(int str_beg, list_p* list_file, int* view)
     {
         printw("***** read mode *****");
     }
+    for (int i = 21; i < size.ws_col; i++)
+    {
+        printw(" ");
+    }
+    attroff(COLOR_PAIR(1));
 }
 
 int main(int argc, char** argv)
@@ -533,22 +541,34 @@ int main(int argc, char** argv)
                         --win_y_copy;
                     }
                     ++win_y_copy;
-                    if (win_x != numbers_key)
+                    if ((win_y != win_y_copy) || (win_x != numbers_key))
                     {
                         while (string_copy != NULL)
                         { 
-                            if (counter_string == win_x - 1 + size.ws_col * (win_y - win_y_copy) - numbers_key)
+                            if (counter_string == win_x - 1 + (size.ws_col - numbers_key) * (win_y - win_y_copy) - numbers_key)
                             {
                                 string_copy->next = plus_next(string_copy, key);
                                 ++mfile[1][view[win_y]];
-                                print_file(win_beg_y, list_file, view);
-                                if (win_x != size.ws_col -1 - numbers_key)
+                                //print_file(win_beg_y, list_file, view);
+                                if (win_x != size.ws_col - 1 - numbers_key)
                                 {
+                                    //move(win_y, win_x + 1);
+                                    print_file(win_beg_y, list_file, view);
                                     move(win_y, win_x + 1);
                                 }
                                 else
                                 {
-                                    move(win_y + 1, numbers_key);
+                                    if (win_y == size.ws_row - 2)
+                                    {
+                                        print_file(win_beg_y + 1, list_file, view);
+                                        ++win_beg_y;
+                                        move(win_y, numbers_key);
+                                    }
+                                    else
+                                    {
+                                        print_file(win_beg_y, list_file, view);
+                                        move(win_y + 1, numbers_key);
+                                    }
                                 }
                                 break;
                             }
@@ -556,14 +576,14 @@ int main(int argc, char** argv)
                             string_copy = string_copy->next;
                         }
                     }
-                    else
+                    if ((win_x == numbers_key) && (win_y == win_y_copy))
                     {
                         list* new = (list*) malloc(sizeof(list));
                         new->next = string_copy;
                         new->val = key;
                         file_copy->val = new;
                         print_file(win_beg_y, list_file, view);
-                        move(win_y, win_x + 1);
+                        move(win_y, win_x + 1 + numbers_key);
                         ++mfile[1][view[win_y]];
                     }
                     break;
@@ -754,7 +774,8 @@ int main(int argc, char** argv)
             getyx(stdscr, win_y, win_x);
             echo();
             move(size.ws_row - 1, 0);
-            printw("enter command:               ");
+            attron(COLOR_PAIR(1));
+            printw("enter command:       ");
             move(size.ws_row -1, 15);
             key = getch();
             //printw("%d", key);
@@ -794,6 +815,14 @@ int main(int argc, char** argv)
             {
                 move(size.ws_row - 1, 0);
                 printw("***** read mode *****");
+                if (win_y != size.ws_row - 1)
+                {
+                    move(win_y, win_x);
+                }
+                else
+                {
+                    move(0, numbers_key);
+                }
                 mode = 0;
             }
         }
